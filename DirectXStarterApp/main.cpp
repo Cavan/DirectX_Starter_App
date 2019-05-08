@@ -2,7 +2,7 @@
 
 #include "DX_App.h"
 
-
+#pragma comment(lib, "d2d1")
 
 
 int WINAPI WinMain(
