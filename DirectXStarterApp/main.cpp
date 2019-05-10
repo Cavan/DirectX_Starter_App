@@ -2,7 +2,10 @@
 
 #include "DX_App.h"
 
+// These pragma comments are used to resolve the unresolved externals
 #pragma comment(lib, "d2d1")
+#pragma comment(lib, "dwrite")
+// These pragma comments are used to resolve the unresolved externals
 
 
 int WINAPI WinMain(

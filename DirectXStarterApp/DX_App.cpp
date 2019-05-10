@@ -17,6 +17,7 @@ DX_App::DX_App() :
 {
 }
 
+
 DX_App::~DX_App()
 {
 	SafeRelease(&m_pDirect2dFactory);
@@ -97,6 +98,79 @@ HRESULT DX_App::Initialize()
 
 
 
+HRESULT DX_App::CreateDrawTextResources()
+{
+	HRESULT hr = S_OK;
+	RECT rc;
+	GetClientRect(m_hwnd, &rc);
+
+	D2D1_SIZE_U size = D2D1::SizeU(
+		rc.right - rc.left,
+		rc.bottom - rc.top
+	);
+
+	//DrawText Tutorial
+	if (SUCCEEDED(hr))
+	{
+		hr = DWriteCreateFactory(
+			DWRITE_FACTORY_TYPE_SHARED,
+			__uuidof(IDWriteFactory),
+			reinterpret_cast<IUnknown**>(&pDWriteFactory_)
+		);
+	}
+	wszText_ = L"Hello World using  DirectWrite!";
+	cTextLength_ = (UINT32)wcslen(wszText_);
+
+	if (SUCCEEDED(hr))
+	{
+		hr = pDWriteFactory_->CreateTextFormat(
+			L"Gabriola",                // Font family name.
+			NULL,                       // Font collection (NULL sets it to use the system font collection).
+			DWRITE_FONT_WEIGHT_REGULAR,
+			DWRITE_FONT_STYLE_NORMAL,
+			DWRITE_FONT_STRETCH_NORMAL,
+			72.0f,
+			L"en-us",
+			&pTextFormat_
+		);
+	}
+	// Center align (horizontally) the text.
+	if (SUCCEEDED(hr))
+	{
+		hr = pTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+	}
+
+	if (SUCCEEDED(hr))
+	{
+		hr = pTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+	}
+	
+
+	if (!m_pRenderTarget)
+	{
+		// Create a Direct2D render target.
+		hr = m_pDirect2dFactory->CreateHwndRenderTarget(
+			D2D1::RenderTargetProperties(),
+			D2D1::HwndRenderTargetProperties(m_hwnd,size),
+			&m_pRenderTarget
+		);
+
+
+		// Create a black brush.
+		if (SUCCEEDED(hr))
+		{
+			hr = m_pRenderTarget->CreateSolidColorBrush(
+				D2D1::ColorF(D2D1::ColorF::Black),
+				&pBlackBrush_
+			);
+		}
+	}
+	//DrawText Tutorial
+	return hr;
+}
+
+
+
 HRESULT DX_App::CreateDeviceIndependentResources()
 {
 	HRESULT hr = S_OK;
@@ -144,6 +218,69 @@ HRESULT DX_App::CreateDeviceResources()
 				&m_pCornflowerBlueBrush
 			);
 		}
+
+		//DrawText Source
+		//********************************
+		if (SUCCEEDED(hr))
+		{
+			hr = DWriteCreateFactory(
+				DWRITE_FACTORY_TYPE_SHARED,
+				__uuidof(IDWriteFactory),
+				reinterpret_cast<IUnknown**>(&pDWriteFactory_)
+			);
+		}
+		wszText_ = L"PLANETARY SCAN\n\nEnergy: variable\nScience: variable\n\n Orders, Captain?\n1.Replenish Energy\n2.Gather Science\n3.Leave Orbit";
+		cTextLength_ = (UINT32)wcslen(wszText_);
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pDWriteFactory_->CreateTextFormat(
+				L"Gabriola",                // Font family name.
+				NULL,                       // Font collection (NULL sets it to use the system font collection).
+				DWRITE_FONT_WEIGHT_BOLD,
+				DWRITE_FONT_STYLE_NORMAL,
+				DWRITE_FONT_STRETCH_NORMAL,
+				45.0f,
+				L"en-us",
+				&pTextFormat_
+			);
+		}
+		// Center align (horizontally) the text.
+		if (SUCCEEDED(hr))
+		{
+			hr = pTextFormat_->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pTextFormat_->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+		}
+
+
+		
+			//// Create a Direct2D render target.
+			//hr = m_pDirect2dFactory->CreateHwndRenderTarget(
+			//	D2D1::RenderTargetProperties(),
+			//	D2D1::HwndRenderTargetProperties(m_hwnd, size),
+			//	&m_pRenderTarget
+			//);
+
+
+			// Create a black brush.
+			if (SUCCEEDED(hr))
+			{
+				hr = m_pRenderTarget->CreateSolidColorBrush(
+					D2D1::ColorF(D2D1::ColorF::Black),
+					&pBlackBrush_
+				);
+			}
+		
+
+		//********************************
+		//DrawText Source
+
+
+		
 	}
 
 	return hr;
@@ -156,6 +293,8 @@ void DX_App::DiscardDeviceResources()
 	SafeRelease(&m_pRenderTarget);
 	SafeRelease(&m_pLightSlateGrayBrush);
 	SafeRelease(&m_pCornflowerBlueBrush);
+	SafeRelease(&pRT_);
+	SafeRelease(&pBlackBrush_);
 }
 
 LRESULT CALLBACK DX_App::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -210,6 +349,7 @@ LRESULT CALLBACK DX_App::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 			case WM_PAINT:
 			{
 				pDX_App->OnRender();
+				//pDX_App->RenderDrawText();
 				ValidateRect(hWnd, NULL);
 			}
 			result = 0;
@@ -237,6 +377,11 @@ LRESULT CALLBACK DX_App::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM 
 }
 
 
+
+
+
+
+
 HRESULT DX_App::OnRender()
 {
 	HRESULT hr = S_OK;
@@ -246,7 +391,8 @@ HRESULT DX_App::OnRender()
 	if (SUCCEEDED(hr))
 	{
 		m_pRenderTarget->BeginDraw();
-		m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+		//m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
+		m_pRenderTarget->SetTransform(D2D1::IdentityMatrix()); // Text
 		m_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
 		D2D1_SIZE_F rtSize = m_pRenderTarget->GetSize();
 
@@ -254,7 +400,7 @@ HRESULT DX_App::OnRender()
 		int width = static_cast<int>(rtSize.width);
 		int height = static_cast<int>(rtSize.height);
 
-		for (int x = 0; x < width; x += 10)
+		/*for (int x = 0; x < width; x += 10)
 		{
 			m_pRenderTarget->DrawLine(
 				D2D1::Point2F(static_cast<FLOAT>(x), 0.0f),
@@ -273,7 +419,7 @@ HRESULT DX_App::OnRender()
 				0.5f
 			);
 		}
-
+*/
 		// Draw two rectangles.
 		D2D1_RECT_F rectangle1 = D2D1::RectF(
 			rtSize.width / 2 - 50.0f,
@@ -290,13 +436,112 @@ HRESULT DX_App::OnRender()
 		);
 
 		// Draw a filled rectangle
-		m_pRenderTarget->FillRectangle(&rectangle1, m_pLightSlateGrayBrush);
+		//m_pRenderTarget->FillRectangle(&rectangle1, m_pLightSlateGrayBrush);
 		// Draw the outline of a rectangle.
-		m_pRenderTarget->DrawRectangle(&rectangle2, m_pCornflowerBlueBrush);
+		//m_pRenderTarget->DrawRectangle(&rectangle2, m_pCornflowerBlueBrush);
+
+
+		//DrawText
+		// ********************************
+		FLOAT dpiX, dpiY;
+		m_pDirect2dFactory->GetDesktopDpi(&dpiX, &dpiY);
+		RECT rc;
+		GetClientRect(m_hwnd, &rc);
+
+
+
+
+		/*D2D1_RECT_F layoutRect = D2D1::RectF(
+			static_cast<FLOAT>(rc.left) / dpiX,
+			static_cast<FLOAT>(rc.top) / dpiY,
+			static_cast<FLOAT>(rc.right - rc.left) / dpiX,
+			static_cast<FLOAT>(rc.bottom - rc.top) / dpiY
+		);*/
+
+		D2D1_RECT_F layoutRect = D2D1::RectF(
+			static_cast<FLOAT>(600),
+			static_cast<FLOAT>(300),
+			static_cast<FLOAT>(rc.right - rc.left) / dpiX,
+			static_cast<FLOAT>(rc.bottom - rc.top) / dpiY
+		); 
+
+
+
+		m_pRenderTarget->DrawText(
+			wszText_,			// The string to render.
+			cTextLength_,		// The string's length.
+			pTextFormat_,		// The text format.
+			layoutRect,			// The region of the window where the text will be rendered.
+			pBlackBrush_		// The brush used to draw the text.
+		);
+
+		// ********************************
+		//DrawText
+
+
 
 		hr = m_pRenderTarget->EndDraw();
+
+		if (hr == D2DERR_RECREATE_TARGET)
+		{
+			hr = S_OK;
+			DiscardDeviceResources();
+		}
+		
+	}
+	
+
+	
+
+	return hr;
+}
+
+
+HRESULT DX_App::RenderDrawText()
+{
+	HRESULT hr = S_OK;
+	hr = CreateDrawTextResources();
+
+	FLOAT dpiX, dpiY;
+	m_pDirect2dFactory->GetDesktopDpi(&dpiX, &dpiY);
+	RECT rc;
+	GetClientRect(m_hwnd, &rc);
+
+	D2D1_RECT_F layoutRect = D2D1::RectF(
+		static_cast<FLOAT>(rc.left) / dpiX,
+		static_cast<FLOAT>(rc.top) / dpiY,
+		static_cast<FLOAT>(rc.right - rc.left) / dpiX,
+		static_cast<FLOAT>(rc.bottom - rc.top) / dpiY
+	);
+
+	m_pRenderTarget->DrawText(
+		wszText_,        // The string to render.
+		cTextLength_,    // The string's length.
+		pTextFormat_,    // The text format.
+		layoutRect,       // The region of the window where the text will be rendered.
+		pBlackBrush_     // The brush used to draw the text.
+	);
+
+
+	if (SUCCEEDED(hr))
+	{
+		m_pRenderTarget->BeginDraw();
+
+		m_pRenderTarget->SetTransform(D2D1::IdentityMatrix());
+
+		m_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Blue));
+
+		// Call the DrawText method of this class.
+		//hr = DrawText();
+
+		if (SUCCEEDED(hr))
+		{
+			hr = m_pRenderTarget->EndDraw(
+			);
+		}
 	}
 
+	// DrawTexT
 	if (hr == D2DERR_RECREATE_TARGET)
 	{
 		hr = S_OK;
@@ -305,7 +550,6 @@ HRESULT DX_App::OnRender()
 
 	return hr;
 }
-
 
 
 void DX_App::OnReSize(UINT width, UINT height)
