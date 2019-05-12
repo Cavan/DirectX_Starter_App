@@ -77,8 +77,8 @@ HRESULT DX_App::Initialize()
 			WS_OVERLAPPEDWINDOW,
 			CW_USEDEFAULT,
 			CW_USEDEFAULT,
-			static_cast<UINT>(ceil(640.f * dpiX / 96.f)),
-			static_cast<UINT>(ceil(480.f * dpiY / 96.f)),
+			static_cast<UINT>(ceil(1024.f * dpiX / 96.f)),
+			static_cast<UINT>(ceil(768.f * dpiY / 96.f)),
 			NULL,
 			NULL,
 			HINST_THISCOMPOMPONENT,
@@ -129,7 +129,7 @@ HRESULT DX_App::CreateDrawTextResources()
 			DWRITE_FONT_WEIGHT_REGULAR,
 			DWRITE_FONT_STYLE_NORMAL,
 			DWRITE_FONT_STRETCH_NORMAL,
-			72.0f,
+			62.0f,
 			L"en-us",
 			&pTextFormat_
 		);
@@ -235,7 +235,7 @@ HRESULT DX_App::CreateDeviceResources()
 		if (SUCCEEDED(hr))
 		{
 			hr = pDWriteFactory_->CreateTextFormat(
-				L"Gabriola",                // Font family name.
+				L"Monospace",                // Font family name.
 				NULL,                       // Font collection (NULL sets it to use the system font collection).
 				DWRITE_FONT_WEIGHT_BOLD,
 				DWRITE_FONT_STYLE_NORMAL,
@@ -393,7 +393,7 @@ HRESULT DX_App::OnRender()
 		m_pRenderTarget->BeginDraw();
 		//m_pRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 		m_pRenderTarget->SetTransform(D2D1::IdentityMatrix()); // Text
-		m_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
+		m_pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::DarkGray));
 		D2D1_SIZE_F rtSize = m_pRenderTarget->GetSize();
 
 		//Draw a grid background
@@ -459,8 +459,8 @@ HRESULT DX_App::OnRender()
 		);*/
 
 		D2D1_RECT_F layoutRect = D2D1::RectF(
-			static_cast<FLOAT>(600),
-			static_cast<FLOAT>(300),
+			static_cast<FLOAT>(1000),
+			static_cast<FLOAT>(700),
 			static_cast<FLOAT>(rc.right - rc.left) / dpiX,
 			static_cast<FLOAT>(rc.bottom - rc.top) / dpiY
 		); 
